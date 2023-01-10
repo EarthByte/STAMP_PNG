@@ -1,0 +1,32 @@
+{
+    "convergence_data_dir" : "./convergence_data/",
+    "coreg_input_dir" : "./coreg_input/",
+    "coreg_input_files" : ["samples.csv",  "random_samples.csv",  "mineral_occurrences.csv"],
+    "region_of_interest_vertices" : "../GIS/PNG_Papua_Dissolved_CH_Points.csv",
+    "region_of_interest_polygon" : "../GIS/PNG_Papua_Dissolved.shp",
+    "regions" : [5, 10, 15, 20],
+    "deposit_path" : "../GIS/min_occ_holm_porphyry.shp",
+
+    
+    "time" : {
+        "start" : 0,
+        "end"   : 230,
+        "step"  : 1
+    },
+
+    "rotation_files" : ["../Muller_2016/Global_EarthByte_230-0Ma_GK07_AREPS.rot"],
+    "topology_files" : ["../Muller_2016/Global_EarthByte_230-0Ma_GK07_AREPS_PlateBoundaries.gpml.gz",
+                        "../Muller_2016/Global_EarthByte_230-0Ma_GK07_AREPS_Topology_BuildingBlocks.gpml.gz"],
+    "static_polygons_file" : "../Muller_2016/Global_EarthByte_GPlates_PresentDay_StaticPlatePolygons_2015_v1.shp",
+    "coastlines" :  "../Muller_2016/Global_EarthByte_230-0Ma_GK07_AREPS_Coastlines.gpmlz",
+    
+    "grid_files" : [
+        ["../Muller_2016/Muller_etal_2016_AREPS_v1.17_netCDF/Muller_etal_2016_AREPS_v1.17_AgeGrid-{time:d}.nc", "seafloor_age"],
+        ["../Muller_2016/carbonate_sediment_thickness_grids/compacted_sediment_thickness_0.5_{time:d}.nc", "carbonate_sediment_thickness"],
+        ["../Muller_2016/sediment_thickness_grids/sed_thick_0.2d_{time:d}.nc", "total_sediment_thick"],
+        ["../Muller_2016/oceanic_crustal_CO2_grids/co2_percent_{time:d}.nc", "ocean_crust_carb_percent"]
+    ],
+
+    "agegrid_url" : "https://www.earthbyte.org/webdav/ftp/Data_Collections/Muller_etal_2016_AREPS/Muller_etal_2016_AREPS_Agegrids/Muller_etal_2016_AREPS_Agegrids_v1.17/Muller_etal_2016_AREPS_v1.17_netCDF/Muller_etal_2016_AREPS_v1.17_AgeGrid-{}.nc",
+    "map_extent" : [128, 152, -12, 2]
+}
