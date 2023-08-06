@@ -1,2 +1,2 @@
 # PNG_MPM
-Spatio-temporal prospectivity mapping of porphyry copper mineralisation in PNG
+Spatio-temporal prospectivity modelling of porphyry copper mineralisation in PNG
