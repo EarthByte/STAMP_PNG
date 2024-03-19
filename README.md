@@ -1,5 +1,5 @@
-# SpatioTemporAl Mineral Prospectivity Modelling (STAMP)
-Spatio-temporal prospectivity modelling of porphyry copper mineralisation in PNG
+# SpatioTemporAl Mineral Prospectivity (STAMP)
+Spatio-temporal prospectivity modelling of porphyry mineralisation in PNG
 
 # Dependencies
 
