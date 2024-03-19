@@ -1,8 +1,6 @@
 import cv2
 import geopandas as gpd
-# import joblib
 import math
-# import multiprocessing
 from netCDF4 import Dataset
 import numpy as np
 import os, sys
@@ -12,12 +10,12 @@ import pygplates
 import scipy.spatial
 import shapefile
 from shapely.geometry import LineString, Point
-from shapely.geometry.polygon import LinearRing
 from tqdm.notebook import tqdm
 from sklearn.experimental import enable_iterative_imputer
 from sklearn.impute import IterativeImputer
 
 from parameters_muller2019_v27 import parameters
+# from parameters_muller2016_v27 import parameters
 # ------------------------------------------------
 
 # convergence kinematic features
@@ -25,21 +23,20 @@ def degree_to_straight_distance(degree):
     
     return math.sin(math.radians(degree)) / math.sin(math.radians(90 - degree/2.))
 
-def query_raster(raster_name, lons, lats, search_radius, ball=False):    
+def query_raster(raster_name, lons, lats, search_radius, ball=False, verbose=True):    
     points=[pygplates.PointOnSphere((float(row[1]), float(row[0]))).to_xyz() for row in zip(lons, lats)]
     rasterfile = Dataset(raster_name, 'r')
+            
     z = rasterfile.variables['z'][:] # masked array
-    zz = cv2.resize(z, dsize=(3601, 1801), interpolation=cv2.INTER_CUBIC)
     
-    try:
-        lon_actual_range = rasterfile.variables['lon'].actual_range
-    except:
-        lon_actual_range = rasterfile.variables['x'].actual_range
+    if verbose:
+        print(raster_name)
     
-    if int(lon_actual_range[0]) == 0: # roll 180 if the grid ranges from 0 to 360
-        zz = np.roll(zz, 180)
-    
-    z = np.ma.asarray(zz.flatten())
+    if len(z.shape) == 3:
+        z = cv2.resize(z.transpose(1, 2, 0), dsize=(3601, 1801), interpolation=cv2.INTER_NEAREST)
+    else:
+        z = cv2.resize(z, dsize=(3601, 1801), interpolation=cv2.INTER_NEAREST)
+    z = z.flatten()
     
     # query the tree 
     if not ball:
@@ -62,7 +59,7 @@ def query_raster(raster_name, lons, lats, search_radius, ball=False):
             points, 
             degree_to_straight_distance(search_radius))
         ret = []
-        for neighbors in all_neighbors: 
+        for neighbors in all_neighbors:
             if len(neighbors)>0: # and (~np.isnan(z[neighbors])).any():
                 ret.append(np.nanmean(z[neighbors]))
             else:
@@ -138,7 +135,13 @@ def plate_isotherm_depth(age, temp, *vartuple) :
 def trench_points_features(start_time, end_time, time_step, conv_dir, conv_prefix, conv_ext, plate_motion_model, random_state=1):
     time_steps = list(range(start_time, end_time+1, time_step))
     
-    if os.path.exists(conv_dir) and len(next(os.walk(conv_dir))[2]) == len(time_steps):
+    count = 0
+    
+    for file in os.listdir(conv_dir):
+        if not file.startswith('features_target_extent'):
+            count += 1
+    
+    if os.path.exists(conv_dir) and count == len(time_steps):
         print('The kinematic features have already been extracted!')
         print(f'Please check {conv_dir}')
         
@@ -149,8 +152,8 @@ def trench_points_features(start_time, end_time, time_step, conv_dir, conv_prefi
         if not os.path.exists(conv_dir):
             os.makedirs(conv_dir)
         if plate_motion_model == 'muller2016':
-            rotation_files = parameters['rotation_file']
-            topology_files = parameters['topology_file']
+            rotation_files = parameters['rotation_files']
+            topology_files = parameters['topology_files']
         elif plate_motion_model == 'muller2019':
             rotation_files = [os.path.join(dirpath, f) for (dirpath, dirnames, filenames) in os.walk(parameters['rotation_dir']) for f in filenames]
             topology_files = [os.path.join(dirpath, f) for (dirpath, dirnames, filenames) in os.walk(parameters['topology_dir']) for f in filenames]
@@ -239,7 +242,6 @@ def trench_points_features(start_time, end_time, time_step, conv_dir, conv_prefi
                     subduction_volume_km3y[subduction_volume_km3y<0] = 0
                     trench_points['subduction_volume_km3_yr'] = subduction_volume_km3y
             
-            # print(trench_points.isna().sum())
             iter_imputer = IterativeImputer(random_state=random_state)
             trench_points_imputed = pd.DataFrame(iter_imputer.fit_transform(trench_points), columns=trench_points.columns)
             trench_points_imputed.to_csv(f'{conv_dir}/{conv_prefix}_{time}.00.{conv_ext}', index=False, float_format='%.4f', na_rep='nan')
@@ -273,7 +275,7 @@ def get_time_from_age(ages, start, end, step):
 
 def get_plate_id(lons, lats, plate_motion_model):
     if plate_motion_model == 'muller2016':
-        rotation_model = pygplates.RotationModel(parameters['rotation_file'])
+        rotation_model = pygplates.RotationModel(parameters['rotation_files'])
     elif plate_motion_model == 'muller2019':
         rotation_model = pygplates.RotationModel([os.path.join(dirpath, f) for (dirpath, dirnames, filenames) in os.walk(parameters['rotation_dir']) for f in filenames])
     
@@ -321,7 +323,7 @@ def get_recon_ccords(lons, lats, plate_motion_model, time): # lons and lats must
         return lons_lats_recon
         
     if plate_motion_model == 'muller2016':
-        rotation_model = pygplates.RotationModel(parameters['rotation_file'])
+        rotation_model = pygplates.RotationModel(parameters['rotation_files'])
     elif plate_motion_model == 'muller2019':
         rotation_model = pygplates.RotationModel([os.path.join(dirpath, f) for (dirpath, dirnames, filenames) in os.walk(parameters['rotation_dir']) for f in filenames])
     
@@ -776,8 +778,8 @@ def get_subduction_teeth(lons, lats, tesselation_degrees=2, triangle_base_length
 
 def subduction_teeth(triangle_base_length, time, plate_motion_model):
     if plate_motion_model == 'muller2016':
-        rotation_files = parameters['rotation_file']
-        topology_files = parameters['topology_file']
+        rotation_files = parameters['rotation_files']
+        topology_files = parameters['topology_files']
     elif plate_motion_model == 'muller2019':
         rotation_files = [os.path.join(dirpath, f) for (dirpath, dirnames, filenames) in os.walk(parameters['rotation_dir']) for f in filenames]
         topology_files = [os.path.join(dirpath, f) for (dirpath, dirnames, filenames) in os.walk(parameters['topology_dir']) for f in filenames]
