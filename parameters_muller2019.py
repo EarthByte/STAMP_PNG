@@ -27,14 +27,13 @@ parameters = {
     'coreg_input_dir' : './coreg_input_muller2019/',
     # the file which contains the seed points
     # coregistration input file
-    'coreg_input_files' : ['mineral_occurrences.csv', 'random_samples.csv', 'target_points'],
+    'coreg_input_files' : ['mineral_occurrences.csv', 'random_samples.csv', 'target_points', 'target_points_ng'],
     # folder contains the coregistration output files
     'coreg_output_dir' : './coreg_output_muller2019/',
 
     # folder contains the machine learning input files
     'ml_input_dir' : './ml_input_muller2019/',
     
-    'augmentation_dir' : './augmentation/',
 
     # folder contains the machine learning output files
     'ml_output_dir' : './ml_output_muller2019/',
@@ -89,13 +88,14 @@ parameters = {
         'Total deep-sea sediment thickness (m)'
         ],
     
-    'selected_features_names_fig' : [
+    'selected_features_names_fig_01' : [
         'Length of the arc segment (deg)',
         'Relative motion vector\n(obliquity angle, deg)',
         'Relative motion vector\n(orthogonal, cm/yr)',
         'Relative motion vector\n(parallel, cm/yr)',
         'Relative motion vector\n(magnitude, cm/yr)',
         'Distance to the nearest\ntrench edge (deg)',
+        'Distance to the nearest\ntrench point (deg)',
         'Overriding absolute plate velocity\n(obliquity angle, deg)',
         'Overriding absolute plate velocity\n(orthogonal, cm/yr)',
         'Overriding absolute plate velocity\n(parallel, cm/yr)',
@@ -112,7 +112,31 @@ parameters = {
         'Total deep-sea sediment\nthickness (m)'
         ],
     
-    'selected_features_names_nounit' : [
+    'selected_features_names_fig_02' : [
+        'Length of the arc segment (deg)',
+        'Obliquity angle of the relative motion vector\n(deg)',
+        'Orthogonal component of the relative motion\nvector (cm/yr)',
+        'Parallel component of the relative motion\nvector (cm/yr)',
+        'Magnitude of the relative motion vector (cm/yr)',
+        'Distance to the nearest trench edge (deg)',
+        'Distance to the nearest trench point (deg)',
+        'Obliquity angle of the overriding absolute\nplate velocity (deg)',
+        'Orthogonal component of the overriding absolute\nplate velocity (cm/yr)',
+        'Parallel component of the overriding absolute\nplate velocity (cm/yr)',
+        'Magnitude of the overriding absolute\nplate velocity (cm/yr)',
+        'Obliquity angle of the downgoing absolute\nplate velocity (deg)',
+        'Orthogonal component of the downgoing absolute\nplate velocity (cm/yr)',
+        'Parallel component of the downgoing absolute\nplate velocity (cm/yr)',
+        'Magnitude of the downgoing absolute\nplate velocity (cm/yr)',
+        'Deep-sea carbonate sediment thickness (m)',
+        'Upper ocean crust carbonate concentration (%)',
+        'Seafloor age (Ma)',
+        'Seafloor spreading rate (mm/yr)',
+        'Subducting plate volume (km\u00b3/yr)',
+        'Total deep-sea sediment thickness (m)'
+        ],
+    
+    'selected_features_names_nounit_01' : [
         'Length of the arc segment',
         'Relative motion vector (obliquity angle)',
         'Relative motion vector (orthogonal)',
@@ -136,6 +160,30 @@ parameters = {
         'Total deep-sea sediment thickness'
         ],
     
+    'selected_features_names_nounit_02' : [
+        'Length of the arc segment',
+        'Obliquity angle of the relative motion vector',
+        'Orthogonal component of the relative motion\nvector',
+        'Parallel component of the relative motion\nvector',
+        'Magnitude of the relative motion vector',
+        'Distance to the nearest trench edge',
+        'Distance to the nearest trench point',
+        'Obliquity angle of the overriding\nabsolute plate velocity',
+        'Orthogonal component of the overriding\nabsolute plate velocity',
+        'Parallel component of the overriding\nabsolute plate velocity',
+        'Magnitude of the overriding\nabsolute plate velocity',
+        'Obliquity angle of the downgoing\nabsolute plate velocity',
+        'Orthogonal component of the downgoing\nabsolute plate velocity',
+        'Parallel component of the downgoing\nabsolute plate velocity',
+        'Magnitude of the downgoing\nabsolute plate velocity',
+        'Deep-sea carbonate sediment thickness',
+        'Upper ocean crust carbonate concentration',
+        'Seafloor age',
+        'Seafloor spreading rate',
+        'Subducting plate volume',
+        'Total deep-sea sediment thickness'
+        ],
+    
     # the following parameters are used by subduction_convergence
     # see https://github.com/EarthByte/PlateTectonicTools/blob/master/ptt/subduction_convergence.py
     'threshold_sampling_distance_degrees' : 0.1,
@@ -144,11 +192,14 @@ parameters = {
 
     'time' : {
         'start' : 0,
-        'end'   : 50,
+        'end'   : 30,
         'step'  : 1
         },
     
-    'min_occ_file' : '../GIS/min_occ_holm.shp',
+    'min_occ_file' : '../GIS/min_occ.shp',
     
-    'target_extent_file' : '../GIS/target_extent.shp'
+    'target_extent_animation' : '../GIS/target_extent_v3.0.shp', # for creating videos
+    'target_extent_map' : '../GIS/min_occ_envelope.shp', # for creating maps
+    
+    'target_polygon' : '../GIS/PNG_Papua_Dissolved.shp' # for creating probability map
     }

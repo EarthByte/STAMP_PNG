@@ -1,3 +1,6 @@
+import warnings
+warnings.filterwarnings('ignore')
+
 import cv2
 import geopandas as gpd
 import math
@@ -6,16 +9,15 @@ import numpy as np
 import os, sys
 import pandas as pd
 from ptt.subduction_convergence import subduction_convergence_over_time
-import pygplates
+from gplately import pygplates
 import scipy.spatial
 import shapefile
 from shapely.geometry import LineString, Point
-from tqdm.notebook import tqdm
 from sklearn.experimental import enable_iterative_imputer
 from sklearn.impute import IterativeImputer
 
-from parameters_muller2019_v27 import parameters
-# from parameters_muller2016_v27 import parameters
+from parameters_muller2019 import parameters
+# from parameters_muller2016 import parameters
 # ------------------------------------------------
 
 # convergence kinematic features
@@ -31,11 +33,13 @@ def query_raster(raster_name, lons, lats, search_radius, ball=False, verbose=Tru
     
     if verbose:
         print(raster_name)
+        # print(z.shape)
     
     if len(z.shape) == 3:
         z = cv2.resize(z.transpose(1, 2, 0), dsize=(3601, 1801), interpolation=cv2.INTER_NEAREST)
     else:
         z = cv2.resize(z, dsize=(3601, 1801), interpolation=cv2.INTER_NEAREST)
+    
     z = z.flatten()
     
     # query the tree 
@@ -165,7 +169,7 @@ def trench_points_features(start_time, end_time, time_step, conv_dir, conv_prefi
             'output_trench_absolute_velocity_components':True,
             'output_subducting_absolute_velocity':True,
             'output_subducting_absolute_velocity_components':True,
-            'output_trench_normal':True
+            'output_trench_normal':False
         }
     
         subduction_convergence_over_time(
@@ -207,12 +211,12 @@ def trench_points_features(start_time, end_time, time_step, conv_dir, conv_prefi
             'subducting_abs_angle_deg',
             'subducting_abs_ortho_cm_yr',
             'subducting_abs_paral_cm_yr',
-            'trench_norm_x_cm_yr',
-            'trench_norm_y_cm_yr',
-            'trench_norm_z_cm_yr'
+            # 'trench_norm_x_cm_yr',
+            # 'trench_norm_y_cm_yr',
+            # 'trench_norm_z_cm_yr'
             ]
         
-        for time in tqdm(time_steps):
+        for time in time_steps:
             trench_points = pd.read_csv(f'{conv_dir}/{conv_prefix}_{time}.00.{conv_ext}', sep=' ', header=None, names=kinematic_features_lst)
             
             for grid in parameters['grid_files']:
@@ -242,6 +246,7 @@ def trench_points_features(start_time, end_time, time_step, conv_dir, conv_prefi
                     subduction_volume_km3y[subduction_volume_km3y<0] = 0
                     trench_points['subduction_volume_km3_yr'] = subduction_volume_km3y
             
+            # print(trench_points.isna().sum())
             iter_imputer = IterativeImputer(random_state=random_state)
             trench_points_imputed = pd.DataFrame(iter_imputer.fit_transform(trench_points), columns=trench_points.columns)
             trench_points_imputed.to_csv(f'{conv_dir}/{conv_prefix}_{time}.00.{conv_ext}', index=False, float_format='%.4f', na_rep='nan')
@@ -287,7 +292,8 @@ def get_plate_id(lons, lats, plate_motion_model):
     
     for i in range(p_len):
         point = pygplates.PointOnSphere(float(lats[i]), float(lons[i]))
-        point_feature = pygplates.Feature()
+        # point_feature = pygplates.Feature()
+        point_feature = pygplates.Feature(pygplates.FeatureType.create_from_qualified_string('gpml:UnclassifiedFeature'))
         point_feature.set_geometry(point)
         point_feature.set_name(str(i))
         point_features.append(point_feature)
@@ -344,25 +350,27 @@ def process_real_deposits(deposit_path, start_time, end_time, time_step, plate_m
     recs = reader.records()
     min_occ_num = len(recs)
     # longitude
-    lons = np.array(recs)[:, 3].tolist()
+    lons = np.array(recs)[:, 6].tolist()
     # latitude
-    lats = np.array(recs)[:, 4].tolist()
+    lats = np.array(recs)[:, 5].tolist()
     # time
-    times = get_time_from_age(np.array(recs)[:, 14], start_time, end_time, time_step) # get integer ages
+    times = get_time_from_age(np.array(recs)[:, 8], start_time, end_time, time_step) # get integer ages
     # plate id
     plate_ids = get_plate_id(lons, lats, plate_motion_model)
     # reconstructed coords
     lons_lats_recon = get_recon_ccords(lons, lats, plate_motion_model, times)
+    # sample weights
+    weights = np.array(recs)[:, 15].tolist()
 
     # index, lon, lat, time, plate id, recon lon, recon lat
     data = []
     
     for i in range(min_occ_num):
-        data.append([i, lons[i], lats[i], times[i], plate_ids[i], lons_lats_recon[i][1], lons_lats_recon[i][0]])
+        data.append([i, lons[i], lats[i], times[i], plate_ids[i], lons_lats_recon[i][1], lons_lats_recon[i][0], weights[i]])
     data = np.array(data)
 
-    data = pd.DataFrame(data, columns=['index', 'lon', 'lat', 'age', 'plate_id', 'lon_recon', 'lat_recon'])
-    data = data.astype({'index': int, 'lon': float, 'lat': float, 'plate_id': int, 'age': int, 'lon_recon': float, 'lat_recon': float})
+    data = pd.DataFrame(data, columns=['index', 'lon', 'lat', 'age', 'plate_id', 'lon_recon', 'lat_recon', 'weight'])
+    data = data.astype({'index': int, 'lon': float, 'lat': float, 'plate_id': int, 'age': int, 'lon_recon': float, 'lat_recon': float, 'weight': int})
     
     return data
 
@@ -514,9 +522,11 @@ def generate_random_samples(buffer_zones_lst, start_time, end_time, time_step, n
     random_data = np.vstack(random_data_lst)
     index_lst = list(range(random_data.shape[0]))
     index_lst = np.array(index_lst).reshape(-1, 1)
-    random_data = np.hstack([index_lst, random_data])
-    random_data = pd.DataFrame(random_data, columns=['index', 'lon','lat','age','plate_id'])
-    random_data = random_data.astype({'index': int, 'lon': float, 'lat': float, 'plate_id': int, 'age': int})
+    weights_lst = [1] * random_data.shape[0] # assigns weight 1 to all random samples
+    weights_lst = np.array(weights_lst).reshape(-1, 1)
+    random_data = np.hstack([index_lst, random_data, weights_lst])
+    random_data = pd.DataFrame(random_data, columns=['index', 'lon','lat','age','plate_id', 'weight'])
+    random_data = random_data.astype({'index': int, 'lon': float, 'lat': float, 'age': int, 'plate_id': int, 'weight': int})
     
     return time_steps_random, random_data
 
@@ -571,11 +581,39 @@ def generate_samples(buffer_zone, dist_x, dist_y, time, plate_motion_model):
         sample_data.append([i, sample_x[i], sample_y[i], time, plate_ids[i]])
     sample_data = np.array(sample_data)
     sample_data = pd.DataFrame(sample_data, columns=['index', 'lon','lat','age','plate_id'])
-    sample_data = sample_data.astype({'index': int, 'lon': float, 'lat': float, 'plate_id': int, 'age': int})
-
-    
+    sample_data = sample_data.astype({'index': int, 'lon': float, 'lat': float, 'age': int, 'plate_id': int})
     
     return sample_data, mask_coords, nx, ny
+
+# reconstruct present-day target points
+def generate_samples_polygon(target_points_path, time, plate_motion_model): # path to the shapefile of present-day target points
+    if not os.path.isfile(target_points_path):
+        sys.exit('File not found!')
+        
+    target_points = pd.read_csv(target_points_path, index_col=False)
+    target_points_num = target_points.shape[0]
+    # longitude
+    lons = target_points['lon'].tolist()
+    # latitude
+    lats = target_points['lat'].tolist()
+    # plate id
+    plate_ids = target_points['plate_id'].tolist()
+    
+    # reconstructed coords
+    lons_lats_recon = get_recon_ccords(lons, lats, plate_motion_model, [time]*target_points_num)
+
+    # index, lon, lat, time, plate id, recon lon, recon lat
+    data = []
+
+    for i in range(target_points_num):
+        data.append([i, lons_lats_recon[i][1], lons_lats_recon[i][0], time, plate_ids[i]])
+    data = np.array(data)
+
+    data = pd.DataFrame(data, columns=['index', 'lon', 'lat', 'age', 'plate_id'])
+    data = data.astype({'index': int, 'lon': float, 'lat': float, 'age': int, 'plate_id': int})
+    
+    return data
+
 # -----------------------------------------
 
 # coregistration
@@ -596,12 +634,17 @@ def coregistration(coreg_input_dir, coreg_output_dir, coreg_input_files, conv_di
     positive_data_file = coreg_output_dir + coreg_input_files[0]
     unlabelled_data_file = coreg_output_dir + coreg_input_files[1]
     target_points_out_files_lst = []
+    target_points_ng_out_files_lst = []
     
     for time in time_steps:
         target_points_out_files_lst.append(coreg_output_dir + coreg_input_files[2] + f'_{time}_Ma.csv')
+        
+    for time in time_steps:
+        target_points_ng_out_files_lst.append(coreg_output_dir + coreg_input_files[3] + f'_{time}_Ma.csv')
     
     if os.path.isfile(positive_data_file) and os.path.isfile(unlabelled_data_file)\
-    and all([os.path.isfile(file) for file in target_points_out_files_lst]):
+    and all([os.path.isfile(file) for file in target_points_out_files_lst])\
+    and all([os.path.isfile(file) for file in target_points_ng_out_files_lst]):
         print('Data points have already been coregistered!')
     else:
         # run the coregistration script
@@ -621,48 +664,57 @@ def coregistration(coreg_input_dir, coreg_output_dir, coreg_input_files, conv_di
         trench_points_columns = trench_points_present_day.columns.tolist()
         trench_points_columns.append('distance_deg')
     
-        for sample_points_file in tqdm(sample_points_files_lst):
+        for sample_points_file in sample_points_files_lst:
             sample_points_file_tail = os.path.split(sample_points_file)[-1]
             coreg_output_file = coreg_output_dir + sample_points_file_tail
-            sample_points = pd.read_csv(sample_points_file, index_col=False)
-            df_empty = pd.DataFrame(np.empty((len(sample_points), len(trench_points_columns))), columns=trench_points_columns)
-            sample_points_coreg = pd.concat([sample_points, df_empty], axis=1).reset_index(drop=True)
-            ages = sorted(sample_points['age'].unique())
-    
-            for age in ages:
-                trench_points = pd.read_csv(f'{conv_dir}/{conv_prefix}_{age}.00.{conv_ext}', index_col=False)
-                trench_points_coords_3d = [pygplates.PointOnSphere((row[1], row[0])).to_xyz() for _, row in trench_points.iterrows()]
-                trench_points_tree = scipy.spatial.cKDTree(trench_points_coords_3d)
-                sample_points_age = sample_points.loc[sample_points['age'] == age]
-    
-                if os.path.split(sample_points_file)[-1] == 'mineral_occurrences.csv':
-                    sample_points_age_coords_3d = [pygplates.PointOnSphere((row[6], row[5])).to_xyz() for _, row in sample_points_age.iterrows()]
-                else:
-                    sample_points_age_coords_3d = [pygplates.PointOnSphere((row[2], row[1])).to_xyz() for _, row in sample_points_age.iterrows()]
-    
-                dists, indices = trench_points_tree.query(sample_points_age_coords_3d, k=1, distance_upper_bound=degree_to_straight_distance(search_radius))
-    
-                for index_1, index_2, dist in zip(sample_points_age.index, indices, dists):
-                    if dist == np.inf:
-                        sample_points_coreg.drop(index=index_1, inplace=True)
-                        if os.path.split(sample_points_file)[-1].startswith('target_points'):
-                            mask_coords_file = f'{coreg_input_dir}/mask_{age}_Ma.csv'
-                            mask_coords = pd.read_csv(mask_coords_file, index_col=False)
-                            for i in range(mask_coords.shape[0]):
-                                if sample_points_age['lon'][index_1] == mask_coords['lon'][i] and sample_points_age['lat'][index_1] == mask_coords['lat'][i]:
-                                    mask_coords['include'][i] = False
-                            mask_coords.to_csv(mask_coords_file, index=False)
-                        continue
+            
+            if not os.path.isfile(coreg_output_file):
+                sample_points = pd.read_csv(sample_points_file, index_col=False)
+                df_empty = pd.DataFrame(np.empty((len(sample_points), len(trench_points_columns))), columns=trench_points_columns)
+                sample_points_coreg = pd.concat([sample_points, df_empty], axis=1).reset_index(drop=True)
+                ages = sorted(sample_points['age'].unique())
+        
+                for age in ages:
+                    trench_points = pd.read_csv(f'{conv_dir}/{conv_prefix}_{age}.00.{conv_ext}', index_col=False)
+                    trench_points_coords_3d = [pygplates.PointOnSphere((row[1], row[0])).to_xyz() for _, row in trench_points.iterrows()]
+                    trench_points_tree = scipy.spatial.cKDTree(trench_points_coords_3d)
+                    sample_points_age = sample_points.loc[sample_points['age'] == age]
+        
+                    if os.path.split(sample_points_file)[-1] == 'mineral_occurrences.csv':
+                        sample_points_age_coords_3d = [pygplates.PointOnSphere((row[6], row[5])).to_xyz() for _, row in sample_points_age.iterrows()]
                     else:
-                        trench_points_temp = trench_points.iloc[index_2]
-                        trench_points_temp['distance_deg'] = round(straight_distance_to_degree(dist), 4)
-                        sample_points_coreg.loc[sample_points_coreg['index'] == index_1, trench_points_columns] = trench_points_temp.tolist()
-            
-            if sample_points_coreg.isnull().values.any():
-                print(f'Warning: {sample_points_file} contains NaN values!')
-            
-            sample_points_coreg.to_csv(coreg_output_file, index=False)
-            print(f'Coregistration completed for {sample_points_file_tail}')
+                        sample_points_age_coords_3d = [pygplates.PointOnSphere((row[2], row[1])).to_xyz() for _, row in sample_points_age.iterrows()]
+        
+                    dists, indices = trench_points_tree.query(sample_points_age_coords_3d, k=1, distance_upper_bound=degree_to_straight_distance(search_radius))
+        
+                    for index_1, index_2, dist in zip(sample_points_age.index, indices, dists):
+                        if dist == np.inf:
+                            sample_points_coreg.drop(index=index_1, inplace=True)
+                            if os.path.split(sample_points_file)[-1].startswith('target_points'):
+                                mask_coords_file = f'{coreg_input_dir}/mask_{age}_Ma.csv'
+                                mask_coords = pd.read_csv(mask_coords_file, index_col=False)
+                                for i in range(mask_coords.shape[0]):
+                                    if sample_points_age['lon'][index_1] == mask_coords['lon'][i] and sample_points_age['lat'][index_1] == mask_coords['lat'][i]:
+                                        mask_coords['include'][i] = False
+                                mask_coords.to_csv(mask_coords_file, index=False)
+                            elif os.path.split(sample_points_file)[-1].startswith('target_points_ng_0'):
+                                mask_coords_file = f'{coreg_input_dir}/mask_ng_0_Ma.csv'
+                                mask_coords = pd.read_csv(mask_coords_file, index_col=False)
+                                for i in range(mask_coords.shape[0]):
+                                    if sample_points_age['lon'][index_1] == mask_coords['lon'][i] and sample_points_age['lat'][index_1] == mask_coords['lat'][i]:
+                                        mask_coords['include'][i] = False
+                                mask_coords.to_csv(mask_coords_file, index=False)
+                            continue
+                        else:
+                            trench_points_temp = trench_points.iloc[index_2]
+                            trench_points_temp['distance_deg'] = round(straight_distance_to_degree(dist), 4)
+                            sample_points_coreg.loc[sample_points_coreg['index'] == index_1, trench_points_columns] = trench_points_temp.tolist()
+                
+                if sample_points_coreg.isnull().values.any():
+                    print(f'Warning: {sample_points_file} contains NaN values!')
+                
+                sample_points_coreg.to_csv(coreg_output_file, index=False)
+                print(f'Coregistration completed for {sample_points_file_tail}')
             
         print('\nCoregistration completed successfully!')
         print(f'The results have been saved in {coreg_output_dir}')
