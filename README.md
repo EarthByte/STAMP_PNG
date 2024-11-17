@@ -6,7 +6,7 @@ This repository contains the notebook and supplementary files required to reprod
 
 ## Input Files
 
-The input files include plate motion models and oceanic grids provided by M&uuller et al. (2016) and M{\"u}ller et al. (2019).
+The input files include plate motion models and oceanic grids provided by Müller et al. (2016) and Müller et al. (2019).
 
 ## Output Files
 
@@ -34,7 +34,7 @@ The final output is a set of GeoTIFF files that shows the probability of the tar
 
 Müller, R.D., Seton, M., Zahirovic, S., Williams, S.E., Matthews, K.J., Wright, N.M., Shephard, G.E., Maloney, K.T., Barnett-Moore, N., Hosseinpour, M. and Bower, D.J., 2016. Ocean basin evolution and global-scale plate reorganization events since Pangea breakup. Annual Review of Earth and Planetary Sciences, 44(1), pp.107-138.
 
-M{\"u}ller, R.D., Zahirovic, S., Williams, S.E., Cannon, J., Seton, M., Bower, D.J., Tetley, M.G., Heine, C., Le Breton, E., Liu, S. and Russell, S.H., 2019. A global plate model including lithospheric deformation along major rifts and orogens since the Triassic. Tectonics, 38(6), pp.1884-1907.
+Müller, R.D., Zahirovic, S., Williams, S.E., Cannon, J., Seton, M., Bower, D.J., Tetley, M.G., Heine, C., Le Breton, E., Liu, S. and Russell, S.H., 2019. A global plate model including lithospheric deformation along major rifts and orogens since the Triassic. Tectonics, 38(6), pp.1884-1907.
 
 # Cite
 
