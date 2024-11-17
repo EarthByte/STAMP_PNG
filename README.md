@@ -6,7 +6,7 @@ This repository contains the notebook and supplementary files required to reprod
 
 ## Input Files
 
-The input files include plate motion models and oceanic grids provided by Müller et al. (2016) and Müller et al. (2019).
+The input files include plate motion models and oceanic grids provided by M&uuml;ller et al. (2016) and Müller et al. (2019).
 
 ## Output Files
 
