@@ -39,14 +39,14 @@ M&uuml;ller, R.D., Zahirovic, S., Williams, S.E., Cannon, J., Seton, M., Bower, 
 # Cite
 
 ```bib
-@article{Farahbakhsh2024,
+@article{Farahbakhsh2025,
   title = {Machine learning-based spatiotemporal prospectivity modeling of porphyry systems in the New Guinea and Solomon Islands region},
   author = {Farahbakhsh, Ehsan and Zahirovic, Sabin and McInnes, Brent I. A. and Polanco, Sara and Kohlmann, Fabian and Seton, Maria and M{\"u}ller, R. Dietmar},
-  year = {2024},
-  journal = {?},
-  volume = {?},
-  number = {?},
+  year = {2025},
+  journal = {Tectonics},
+  volume = {44},
+  number = {3},
   pages = {?},
-  doi = {?},
+  doi = {10.1029/2024TC008362},
 }
 ```
