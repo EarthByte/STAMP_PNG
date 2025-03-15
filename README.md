@@ -28,7 +28,6 @@ The final output is a set of GeoTIFF files that shows the probability of the tar
 - skimage
 - sklearn
 - skopt
-- tensorflow
 
 # References
 
