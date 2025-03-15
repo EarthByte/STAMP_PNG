@@ -2,7 +2,7 @@
 
 [![DOI](https://zenodo.org/badge/587157997.svg)](https://zenodo.org/doi/10.5281/zenodo.10976576)
 
-This repository contains the notebook and supplementary files required to reproduce the results presented in the paper titled _Machine learning-based spatiotemporal prospectivity modeling of porphyry systems in the New Guinea and Solomon Islands region_ by Farahbakhsh et al. The notebook enables users to create a spatio-temporal prospectivity model for Porphyry Mineralisation in the New Guinea and Solomon Islands region.
+This repository contains the notebook and supplementary files required to reproduce the results presented in the paper titled _Machine learning-based spatiotemporal prospectivity modeling of porphyry systems in the New Guinea and Solomon Islands region_ by Farahbakhsh et al (2025). The notebook enables users to create a spatio-temporal prospectivity model for Porphyry Mineralisation in the New Guinea and Solomon Islands region.
 
 ## Input Files
 
