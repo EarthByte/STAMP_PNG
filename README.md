@@ -45,7 +45,7 @@ M&uuml;ller, R.D., Zahirovic, S., Williams, S.E., Cannon, J., Seton, M., Bower, 
   journal = {Tectonics},
   volume = {44},
   number = {3},
-  pages = {?},
+  pages = {e2024TC008362},
   doi = {10.1029/2024TC008362},
 }
 ```
